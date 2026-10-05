@@ -1,0 +1,14 @@
+{
+  "full_name": "Jordan Lee",
+  "email": " Jordan@Example.com ",
+  "phone": "+1 (555) 010-2020",
+  "business_name": "Northstar Plumbing",
+  "website": "https://northstar.example.com",
+  "service_interest": "AI receptionist",
+  "message": "We need after-hours lead handling.",
+  "lead_source": "google",
+  "utm_source": "google",
+  "utm_medium": "cpc",
+  "utm_campaign": "local-services",
+  "referrer": "https://www.google.com/"
+}

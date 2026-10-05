@@ -1,0 +1,78 @@
+{
+  "name": "Lead Intake Normalizer",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake-normalizer",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "7f32bd07-8b13-4bb3-b62f-81e061c9c5c1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -420,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst body = input.body && typeof input.body === 'object' ? input.body : input;\n\nconst firstValue = (...values) =>\n  values.find((value) => value !== undefined && value !== null && String(value).trim() !== '');\n\nconst clean = (value) => {\n  if (value === undefined || value === null) return null;\n  return typeof value === 'string' ? value.trim() || null : value;\n};\n\nconst email = clean(firstValue(body.email, body.email_address, body.emailAddress));\nconst phoneRaw = clean(firstValue(body.phone, body.phone_number, body.phoneNumber));\nconst phone = typeof phoneRaw === 'string' ? phoneRaw.replace(/[^+\\d]/g, '') || null : phoneRaw;\n\nreturn [{\n  json: {\n    lead: {\n      fullName: clean(firstValue(body.full_name, body.fullName, body.name)),\n      email: typeof email === 'string' ? email.toLowerCase() : email,\n      phone,\n      company: clean(firstValue(body.company, body.business, body.business_name, body.businessName)),\n      website: clean(firstValue(body.website, body.url)),\n      service: clean(firstValue(body.service, body.service_interest, body.serviceInterest)),\n      message: clean(firstValue(body.message, body.notes, body.details)),\n      source: clean(firstValue(body.source, body.lead_source, body.leadSource, body.utm_source)),\n    },\n    attribution: {\n      utmSource: clean(firstValue(body.utm_source, body.utmSource)),\n      utmMedium: clean(firstValue(body.utm_medium, body.utmMedium)),\n      utmCampaign: clean(firstValue(body.utm_campaign, body.utmCampaign)),\n      referrer: clean(firstValue(body.referrer, body.referer)),\n    },\n    meta: {\n      receivedAt: new Date().toISOString(),\n      originalKeys: Object.keys(body).sort(),\n    },\n  },\n}];"
+      },
+      "id": "ee271b8a-e815-4702-9dd8-d267b31d5cb8",
+      "name": "Normalize Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "da573638-0f4e-41ad-84e2-376875ea76d2",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        100,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Lead": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

@@ -1,0 +1,31 @@
+name: Workflow bug
+description: Report a reproducible issue with a workflow or repository utility.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: input
+    id: path
+    attributes:
+      label: Workflow or file path
+      placeholder: n8n/lead-intake-normalizer/workflow.json
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Remove credentials, personal data, and private URLs before posting.
+    validations:
+      required: true
