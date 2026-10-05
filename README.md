@@ -63,4 +63,4 @@ Maintained by [Ahmad Yar](https://www.ahmadyar.co/) — automation systems, AI w
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+Apache License 2.0 — see [LICENSE](LICENSE).

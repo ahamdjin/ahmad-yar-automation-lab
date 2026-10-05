@@ -29,4 +29,4 @@ npm run validate
 
 Explain the problem, expected input/output, required services or credentials, how you tested it, and any production risks or limitations.
 
-By contributing, you agree that your contribution is licensed under the repository's MIT License.
+By contributing, you agree that your contribution is licensed under the repository's Apache License 2.0.
