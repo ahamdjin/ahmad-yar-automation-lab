@@ -1,0 +1,8 @@
+{
+  "landing_page": "https://example.com/services?utm_source=google&utm_medium=cpc&utm_campaign=local-growth&gclid=example-click",
+  "utm_source": "Google",
+  "utm_medium": "CPC",
+  "utm_campaign": "local-growth",
+  "gclid": "example-click",
+  "referrer": "https://www.google.com/"
+}

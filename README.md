@@ -1,65 +1,86 @@
 # Ahmad Yar Automation Lab
 
-Production-minded automation workflows, n8n patterns, integration utilities, and practical examples for real business systems.
+[![Validate automation library](https://github.com/ahamdjin/ahmad-yar-automation-lab/actions/workflows/validate.yml/badge.svg)](https://github.com/ahamdjin/ahmad-yar-automation-lab/actions/workflows/validate.yml)
 
-This repository is a public working library: each asset should solve a specific problem, explain its assumptions, avoid embedded secrets, and be useful beyond a single client implementation.
+Reusable n8n workflows, automation patterns, and implementation notes for real business systems.
+
+The goal is simple: publish small automation building blocks that are safe to inspect, easy to adapt, and useful before you connect them to a CRM, help desk, database, messaging platform, or AI layer.
+
+## Start here
+
+| Workflow | Use it when you need to... | Credentials |
+| --- | --- | --- |
+| [Lead Intake Normalizer](n8n/lead-intake-normalizer/) | turn inconsistent lead forms into one predictable schema | None |
+| [Local Business Lead Router](n8n/local-business-lead-router/) | score and route inbound service-business leads with transparent rules | None |
+| [Webhook Payload Validator](n8n/webhook-payload-validator/) | reject malformed contact payloads before they reach downstream systems | None |
+| [UTM Attribution Normalizer](n8n/utm-attribution-normalizer/) | standardize campaign attribution and strip tracking parameters from landing URLs | None |
+| [Error Workflow Formatter](n8n/error-workflow-formatter/) | turn n8n failure events into a clean alert payload for Slack, email, or incident tools | None |
 
 ## What lives here
 
 | Area | Purpose |
 | --- | --- |
-| `n8n/` | Importable n8n workflows with setup notes and sample payloads |
-| `snippets/` | Reusable JavaScript helpers for automation work |
-| `docs/` | Architecture notes, conventions, and implementation guides |
-| `scripts/` | Repository tooling and validation utilities |
+| `n8n/` | Importable n8n workflows with setup notes and fictional sample payloads |
+| `snippets/` | Reusable JavaScript helpers for Code nodes and automation scripts |
+| `docs/` | Architecture notes, production checklists, and implementation guides |
+| `scripts/` | Repository validation tooling |
+| `.github/` | CI, issue forms, and contribution templates |
 
-## Workflow catalog
+## How to use a workflow
 
-| Workflow | What it does | Credentials required |
-| --- | --- | --- |
-| [Lead Intake Normalizer](n8n/lead-intake-normalizer/) | Accepts inconsistent lead payloads and returns a predictable schema | No |
-| [Local Business Lead Router](n8n/local-business-lead-router/) | Scores and routes inbound leads using explicit, editable rules | No |
+1. Open the workflow folder and read its README first.
+2. Import `workflow.json` into n8n.
+3. Use the test webhook URL while developing.
+4. Send the included fictional sample payload.
+5. Review every rule and assumption before connecting production systems.
+6. Add authentication, idempotency, retries, consent handling, and observability where your use case requires them.
+7. Publish only after testing the production path.
 
-More workflows will be added as they are documented and generalized enough to be safely reused.
+For webhook-specific production checks, use [docs/webhook-production-checklist.md](docs/webhook-production-checklist.md).
 
-## Principles
+## Quality standard
 
-- **Useful before impressive.** Every workflow should solve a real operational problem.
-- **Portable by default.** Public assets should not depend on private client infrastructure.
-- **No secrets in exports.** Credentials, tokens, personal data, and internal URLs do not belong in this repository.
-- **Explain the tradeoffs.** READMEs should document inputs, outputs, assumptions, and failure modes.
-- **Human-readable automation.** Node names, code, and routing rules should make the workflow understandable without reverse engineering it.
-- **Safe examples.** Sample payloads use fictional data and placeholder domains.
+Every public workflow should:
 
-## Quick start
+- solve a specific operational problem;
+- be inactive by default;
+- contain no secrets or real customer data;
+- use descriptive node names;
+- document inputs, outputs, assumptions, and failure modes;
+- include fictional examples;
+- make business rules visible instead of hiding them behind vague "AI" labels;
+- state clearly what still needs production hardening.
 
-1. Open the README inside the workflow folder.
-2. Import its `workflow.json` into n8n.
-3. Review every node and replace placeholder configuration where documented.
-4. Use n8n's test URL before activating a webhook workflow.
-5. Send a sample payload and verify the output before connecting production systems.
+The full standard is in [docs/workflow-quality-standard.md](docs/workflow-quality-standard.md).
 
 ## Validation
 
-Workflow exports are validated in CI for JSON syntax, required top-level workflow fields, duplicate node names, broken connection targets, duplicate webhook paths, sibling documentation, and common secret patterns.
+CI validates workflow JSON, node names and IDs, connection targets, webhook path collisions, explicit webhook response codes, documentation, sample payloads, and common secret patterns.
 
-Run the same check locally:
+Run the same checks locally:
 
 ```bash
 npm run validate
 ```
 
+## n8n references
+
+These patterns follow n8n's documented webhook and error-workflow behavior:
+
+- Webhook node: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/
+- Webhook development flow: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/workflow-development/
+- Respond to Webhook: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.respondtowebhook/
+- Error handling: https://docs.n8n.io/build/flow-logic/handle-errors-gracefully/
+
 ## Contributing
 
-Contributions are welcome when they improve a reusable automation pattern rather than expose a one-off private implementation. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [workflow quality standard](docs/workflow-quality-standard.md) before opening a pull request.
-
-## Security
-
-Never commit credentials or real customer data. If you discover a security issue, follow [SECURITY.md](SECURITY.md).
+Useful contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [MAINTAINERS.md](MAINTAINERS.md).
 
 ## Maintainer
 
 Maintained by [Ahmad Yar](https://www.ahmadyar.co/) — automation systems, AI workflows, integrations, and backend infrastructure.
+
+If you need a reusable example, open an issue. If you need architecture or implementation work for a production system, the maintainer's portfolio has the relevant project context and contact route.
 
 ## License
 

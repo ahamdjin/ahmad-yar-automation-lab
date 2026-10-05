@@ -1,0 +1,26 @@
+{
+  "severity": "error",
+  "summary": "Lead Intake failed at Create CRM Contact: CRM returned 429",
+  "workflow": {
+    "id": "12",
+    "name": "Lead Intake"
+  },
+  "execution": {
+    "id": "88",
+    "url": "https://n8n.example/execution/88",
+    "mode": "webhook",
+    "lastNodeExecuted": "Create CRM Contact"
+  },
+  "error": {
+    "name": "NodeApiError",
+    "message": "CRM returned 429",
+    "description": null
+  },
+  "alert": {
+    "title": "n8n workflow failure: Lead Intake",
+    "text": "Lead Intake failed at Create CRM Contact: CRM returned 429\\nhttps://n8n.example/execution/88"
+  },
+  "meta": {
+    "formattedAt": "<generated ISO timestamp>"
+  }
+}

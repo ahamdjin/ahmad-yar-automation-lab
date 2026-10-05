@@ -1,0 +1,20 @@
+{
+  "attribution": {
+    "source": "google",
+    "medium": "cpc",
+    "campaign": "local-growth",
+    "term": null,
+    "content": null,
+    "channel": "paid_search",
+    "gclid": "example-click",
+    "fbclid": null,
+    "referrer": "https://www.google.com/"
+  },
+  "landingPage": {
+    "original": "https://example.com/services?utm_source=google&utm_medium=cpc&utm_campaign=local-growth&gclid=example-click",
+    "canonical": "https://example.com/services"
+  },
+  "meta": {
+    "processedAt": "<generated ISO timestamp>"
+  }
+}
