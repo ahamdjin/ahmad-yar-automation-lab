@@ -1,6 +1,7 @@
 name: Validate automation library
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
@@ -43,3 +44,5 @@ jobs:
           python -m gpt_tools audit-action python/examples/action-openapi.json
           python -m gpt_tools chunk python/examples/knowledge.md -o /tmp/chunks.jsonl --max-chars 500 --overlap-chars 50
           python -m gpt_tools compact python/examples/tool-output.json -o /tmp/compact.json --max-items 3 --max-string 100
+          printf 'Email demo@example.com from 192.0.2.10' | python -m gpt_tools redact --report > /tmp/redacted.txt
+          grep -q '\[EMAIL_1\]' /tmp/redacted.txt
