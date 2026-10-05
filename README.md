@@ -24,8 +24,12 @@ The goal is simple: publish small automation building blocks that are safe to in
 | [PII + Secret Redactor](python/README.md#2-pii--secret-redactor) | remove common sensitive values before model context or logs |
 | [Tool-output Compactor](python/README.md#3-tool-output-compactor) | shrink large API/tool responses and redact secret-bearing fields |
 | [OpenAPI Action Auditor](python/README.md#4-openapi-action-auditor) | catch common GPT/action schema problems before deployment |
+| [URL Safety Guard](python/README.md#5-url-safety-guard) | reject localhost/private/unsafe model-selected URLs before server-side fetches |
+| [HTML Text Extractor](python/README.md#6-html-text-extractor) | turn noisy HTML into compact text and normalized links |
+| [HTTP Retry Policy](python/README.md#7-http-retry-policy) | retry transient API failures without blindly repeating unsafe operations |
+| [JSONL Retrieval Deduper](python/README.md#8-jsonl-retrieval-deduper) | remove normalized duplicate chunks before retrieval/indexing |
 
-The Python package uses only the standard library for its core tools. See [python/README.md](python/README.md) for installation, examples, and limitations.
+The Python package uses only the standard library for its core tools. See [python/README.md](python/README.md) for installation, examples, limitations, and production caveats.
 
 ## What lives here
 
@@ -72,6 +76,7 @@ Run the checks locally:
 ```bash
 npm run validate
 PYTHONPATH=python python -m unittest discover -s tests/python -p 'test_*.py'
+python -m compileall -q python
 ```
 
 ## n8n references
