@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ahmad-yar-gpt-tools"
+version = "0.2.0"
+description = "Dependency-light Python utilities for GPT, agent, retrieval, and tool pipelines."
+readme = "python/README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [{name = "Ahmad Yar"}]
+
+[project.optional-dependencies]
+yaml = ["PyYAML>=6,<7"]
+
+[project.scripts]
+gpt-chunk = "gpt_tools.retrieval_chunker:main"
+gpt-redact = "gpt_tools.pii_redactor:main"
+gpt-compact = "gpt_tools.tool_output_compactor:main"
+gpt-action-audit = "gpt_tools.openapi_action_auditor:main"
+
+[tool.setuptools]
+package-dir = {"" = "python"}
+
+[tool.setuptools.packages.find]
+where = ["python"]

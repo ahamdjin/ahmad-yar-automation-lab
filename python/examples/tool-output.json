@@ -1,0 +1,12 @@
+{
+  "request_id": "req_example",
+  "access_token": "EXAMPLE_TOKEN_VALUE",
+  "items": [
+    {"id": 1, "title": "Result 1", "description": "Example description repeated to demonstrate compaction. Example description repeated to demonstrate compaction."},
+    {"id": 2, "title": "Result 2", "description": "Example description repeated to demonstrate compaction. Example description repeated to demonstrate compaction."},
+    {"id": 3, "title": "Result 3", "description": "Example description repeated to demonstrate compaction. Example description repeated to demonstrate compaction."},
+    {"id": 4, "title": "Result 4", "description": "Example description repeated to demonstrate compaction. Example description repeated to demonstrate compaction."},
+    {"id": 5, "title": "Result 5", "description": "Example description repeated to demonstrate compaction. Example description repeated to demonstrate compaction."}
+  ],
+  "debug": null
+}

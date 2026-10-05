@@ -14,9 +14,32 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
       - name: Use Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Validate workflow exports
+
+      - name: Validate n8n workflow exports
         run: npm run validate
+
+      - name: Use Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile Python toolkit
+        run: python -m compileall -q python
+
+      - name: Test Python toolkit
+        env:
+          PYTHONPATH: python
+        run: python -m unittest discover -s tests/python -p 'test_*.py'
+
+      - name: Smoke-test Python CLIs
+        env:
+          PYTHONPATH: python
+        run: |
+          python -m gpt_tools audit-action python/examples/action-openapi.json
+          python -m gpt_tools chunk python/examples/knowledge.md -o /tmp/chunks.jsonl --max-chars 500 --overlap-chars 50
+          python -m gpt_tools compact python/examples/tool-output.json -o /tmp/compact.json --max-items 3 --max-string 100
