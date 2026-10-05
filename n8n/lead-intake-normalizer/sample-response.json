@@ -1,0 +1,35 @@
+{
+  "lead": {
+    "fullName": "Jordan Lee",
+    "email": "jordan@example.com",
+    "phone": "+15550102020",
+    "company": "Northstar Plumbing",
+    "website": "https://northstar.example.com",
+    "service": "AI receptionist",
+    "message": "We need after-hours lead handling.",
+    "source": "google"
+  },
+  "attribution": {
+    "utmSource": "google",
+    "utmMedium": "cpc",
+    "utmCampaign": "local-services",
+    "referrer": "https://www.google.com/"
+  },
+  "meta": {
+    "receivedAt": "<generated ISO timestamp>",
+    "originalKeys": [
+      "business_name",
+      "email",
+      "full_name",
+      "lead_source",
+      "message",
+      "phone",
+      "referrer",
+      "service_interest",
+      "utm_campaign",
+      "utm_medium",
+      "utm_source",
+      "website"
+    ]
+  }
+}

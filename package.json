@@ -1,0 +1,14 @@
+{
+  "name": "ahmad-yar-automation-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Validation tooling for a public library of n8n workflows and automation patterns.",
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate-workflows.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT"
+}

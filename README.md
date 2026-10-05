@@ -17,8 +17,8 @@ This repository is a public working library: each asset should solve a specific 
 
 | Workflow | What it does | Credentials required |
 | --- | --- | --- |
-| Lead Intake Normalizer | Accepts inconsistent lead payloads and returns a predictable schema | No |
-| Local Business Lead Router | Scores and routes inbound leads using explicit, editable rules | No |
+| [Lead Intake Normalizer](n8n/lead-intake-normalizer/) | Accepts inconsistent lead payloads and returns a predictable schema | No |
+| [Local Business Lead Router](n8n/local-business-lead-router/) | Scores and routes inbound leads using explicit, editable rules | No |
 
 More workflows will be added as they are documented and generalized enough to be safely reused.
 
@@ -41,7 +41,7 @@ More workflows will be added as they are documented and generalized enough to be
 
 ## Validation
 
-Workflow exports are validated in CI for JSON syntax, required top-level workflow fields, duplicate node names, and broken connection targets.
+Workflow exports are validated in CI for JSON syntax, required top-level workflow fields, duplicate node names, broken connection targets, duplicate webhook paths, sibling documentation, and common secret patterns.
 
 Run the same check locally:
 
@@ -51,7 +51,7 @@ npm run validate
 
 ## Contributing
 
-Contributions are welcome when they improve a reusable automation pattern rather than expose a one-off private implementation. See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+Contributions are welcome when they improve a reusable automation pattern rather than expose a one-off private implementation. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [workflow quality standard](docs/workflow-quality-standard.md) before opening a pull request.
 
 ## Security
 

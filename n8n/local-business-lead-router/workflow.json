@@ -1,0 +1,78 @@
+{
+  "name": "Local Business Lead Router",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "local-business-lead-router",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "0e23b90f-3c75-49d7-8888-47d5f70ce925",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -420,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst body = input.body && typeof input.body === 'object' ? input.body : input;\n\nconst value = (...keys) => {\n  for (const key of keys) {\n    const candidate = body[key];\n    if (candidate !== undefined && candidate !== null && String(candidate).trim() !== '') {\n      return typeof candidate === 'string' ? candidate.trim() : candidate;\n    }\n  }\n  return null;\n};\n\nconst email = value('email', 'email_address', 'emailAddress');\nconst phone = value('phone', 'phone_number', 'phoneNumber');\nconst service = value('service', 'service_interest', 'serviceInterest');\nconst message = String(value('message', 'notes', 'details') || '').toLowerCase();\nconst timeframe = String(value('timeframe', 'timeline', 'when') || '').toLowerCase();\n\nlet score = 0;\nconst reasons = [];\n\nif (email || phone) {\n  score += 2;\n  reasons.push('reachable contact');\n}\n\nif (service) {\n  score += 2;\n  reasons.push('service identified');\n}\n\nif (/urgent|emergency|today|same day|asap/.test(message + ' ' + timeframe)) {\n  score += 3;\n  reasons.push('high-intent timeframe');\n}\n\nif (/quote|estimate|book|appointment|schedule|consult/.test(message)) {\n  score += 2;\n  reasons.push('commercial intent');\n}\n\nconst priority = score >= 6 ? 'high' : score >= 3 ? 'medium' : 'low';\nconst route =\n  priority === 'high'\n    ? 'priority-intake'\n    : priority === 'medium'\n      ? 'standard-intake'\n      : 'nurture';\n\nreturn [{\n  json: {\n    lead: {\n      fullName: value('full_name', 'fullName', 'name'),\n      email,\n      phone,\n      service,\n      message: value('message', 'notes', 'details'),\n    },\n    routing: {\n      score,\n      priority,\n      route,\n      reasons,\n    },\n    meta: {\n      evaluatedAt: new Date().toISOString(),\n    },\n  },\n}];"
+      },
+      "id": "193abbe2-a332-4098-8b02-5b1d23221640",
+      "name": "Score and Route Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "9fd2a45f-260d-4690-8f46-9daa76674fd0",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        100,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Score and Route Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score and Route Lead": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

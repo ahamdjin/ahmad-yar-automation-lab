@@ -1,0 +1,29 @@
+name: Workflow request
+description: Suggest a reusable automation pattern for the library.
+title: "[Workflow]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Operational problem
+      description: Describe the business process, not a specific client's private setup.
+    validations:
+      required: true
+  - type: textarea
+    id: input
+    attributes:
+      label: Expected input
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Expected output
+    validations:
+      required: true
+  - type: textarea
+    id: services
+    attributes:
+      label: Services or APIs involved
+      description: Do not include credentials or account identifiers.
