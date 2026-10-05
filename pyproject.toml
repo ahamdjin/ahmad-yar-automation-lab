@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ahmad-yar-gpt-tools"
-version = "0.2.0"
+version = "0.3.0"
 description = "Dependency-light Python utilities for GPT, agent, retrieval, and tool pipelines."
 readme = "python/README.md"
 requires-python = ">=3.11"
@@ -19,6 +19,10 @@ gpt-chunk = "gpt_tools.retrieval_chunker:main"
 gpt-redact = "gpt_tools.pii_redactor:main"
 gpt-compact = "gpt_tools.tool_output_compactor:main"
 gpt-action-audit = "gpt_tools.openapi_action_auditor:main"
+gpt-url-check = "gpt_tools.url_safety_guard:main"
+gpt-html-text = "gpt_tools.html_text_extractor:main"
+gpt-retry = "gpt_tools.http_retry_policy:main"
+gpt-dedupe-jsonl = "gpt_tools.jsonl_deduper:main"
 
 [tool.setuptools]
 package-dir = {"" = "python"}
