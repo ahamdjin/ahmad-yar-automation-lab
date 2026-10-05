@@ -1,0 +1,80 @@
+{
+  "name": "UTM Attribution Normalizer",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "utm-attribution-normalizer",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "36f22e9a-a0b8-4c96-84ec-a630c94b255a",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -420,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst body = input.body && typeof input.body === 'object' ? input.body : input;\nconst query = input.query && typeof input.query === 'object' ? input.query : {};\n\nconst firstValue = (...values) =>\n  values.find((value) => value !== undefined && value !== null && String(value).trim() !== '');\n\nconst text = (value, lower = false) => {\n  if (value === undefined || value === null) return null;\n  const cleaned = String(value).trim();\n  if (!cleaned) return null;\n  return lower ? cleaned.toLowerCase() : cleaned;\n};\n\nconst pick = (...keys) => firstValue(...keys.flatMap((key) => [body[key], query[key]]));\nconst source = text(pick('utm_source', 'utmSource'), true);\nconst medium = text(pick('utm_medium', 'utmMedium'), true);\nconst campaign = text(pick('utm_campaign', 'utmCampaign'));\nconst term = text(pick('utm_term', 'utmTerm'));\nconst content = text(pick('utm_content', 'utmContent'));\nconst referrer = text(firstValue(body.referrer, body.referer, input.headers?.referer));\nconst landingPage = text(firstValue(body.landing_page, body.landingPage, body.url, query.url));\nconst gclid = text(pick('gclid'));\nconst fbclid = text(pick('fbclid'));\n\nlet canonicalLandingPage = landingPage;\nif (landingPage) {\n  try {\n    const url = new URL(landingPage);\n    for (const key of [...url.searchParams.keys()]) {\n      if (key.toLowerCase().startsWith('utm_') || ['gclid', 'fbclid', 'msclkid'].includes(key.toLowerCase())) {\n        url.searchParams.delete(key);\n      }\n    }\n    canonicalLandingPage = url.toString();\n  } catch {\n    canonicalLandingPage = landingPage;\n  }\n}\n\nconst socialSources = ['facebook', 'instagram', 'linkedin', 'tiktok', 'x', 'twitter', 'youtube', 'pinterest'];\nconst searchSources = ['google', 'bing', 'duckduckgo', 'yahoo'];\n\nlet channel = 'direct';\nif (gclid || /cpc|ppc|paid[-_ ]?search|sem/.test(medium || '')) channel = 'paid_search';\nelse if (/paid[-_ ]?social|social[-_ ]?paid/.test(medium || '') || (fbclid && socialSources.includes(source))) channel = 'paid_social';\nelse if (/email|newsletter/.test(medium || '') || /email|newsletter/.test(source || '')) channel = 'email';\nelse if (medium === 'organic' || searchSources.includes(source)) channel = 'organic_search';\nelse if (/social/.test(medium || '') || socialSources.includes(source)) channel = 'organic_social';\nelse if (referrer) channel = 'referral';\nelse if (source || medium) channel = 'other';\n\nreturn [{\n  json: {\n    attribution: { source, medium, campaign, term, content, channel, gclid, fbclid, referrer },\n    landingPage: { original: landingPage, canonical: canonicalLandingPage },\n    meta: { processedAt: new Date().toISOString() },\n  },\n}];"
+      },
+      "id": "41298392-e57a-4bd6-b697-53f3a759eb11",
+      "name": "Normalize Attribution",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "24b83dc0-4162-4b30-85d3-e126cf78de9c",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        100,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Attribution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Attribution": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

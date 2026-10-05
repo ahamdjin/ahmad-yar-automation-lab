@@ -1,0 +1,80 @@
+{
+  "name": "Webhook Payload Validator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook-payload-validator",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a8f58426-b8b4-45e1-81e4-d1cba6b8ef66",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -420,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst body = input.body && typeof input.body === 'object' ? input.body : input;\n\nconst firstValue = (...values) =>\n  values.find((value) => value !== undefined && value !== null && String(value).trim() !== '');\n\nconst clean = (value) => {\n  if (value === undefined || value === null) return null;\n  return typeof value === 'string' ? value.trim() || null : value;\n};\n\nconst data = {\n  name: clean(firstValue(body.name, body.full_name, body.fullName)),\n  email: clean(firstValue(body.email, body.email_address, body.emailAddress)),\n  phone: clean(firstValue(body.phone, body.phone_number, body.phoneNumber)),\n  company: clean(firstValue(body.company, body.business, body.business_name, body.businessName)),\n  message: clean(firstValue(body.message, body.notes, body.details)),\n};\n\nif (typeof data.email === 'string') data.email = data.email.toLowerCase();\n\nconst errors = [];\nfor (const field of ['name', 'email']) {\n  if (!data[field]) errors.push({ field, code: 'required', message: field + ' is required' });\n}\n\nif (data.email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(data.email)) {\n  errors.push({ field: 'email', code: 'invalid_email', message: 'email must be a valid address' });\n}\n\nif (data.message && data.message.length > 2000) {\n  errors.push({ field: 'message', code: 'too_long', message: 'message must be 2000 characters or fewer' });\n}\n\nconst ok = errors.length === 0;\n\nreturn [{\n  json: {\n    ok,\n    statusCode: ok ? 200 : 422,\n    data,\n    errors,\n    meta: { validatedAt: new Date().toISOString() },\n  },\n}];"
+      },
+      "id": "671939fe-1016-4fc7-9c86-aae0aa3da771",
+      "name": "Validate Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": "={{ $json.statusCode }}"
+        }
+      },
+      "id": "9b982ce2-7dc9-49cc-9201-caa6cb201cbe",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        100,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Payload": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

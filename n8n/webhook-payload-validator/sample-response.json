@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "statusCode": 200,
+  "data": {
+    "name": "Sam Reed",
+    "email": "sam@example.com",
+    "phone": "+1 555 010 8080",
+    "company": "Example Services",
+    "message": "I would like a quote for an automation project."
+  },
+  "errors": [],
+  "meta": {
+    "validatedAt": "<generated ISO timestamp>"
+  }
+}

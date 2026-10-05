@@ -1,0 +1,47 @@
+{
+  "name": "Error Workflow Formatter",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "12e23856-ad79-4ee8-a8a5-7627f9458854",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -360,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst execution = input.execution && typeof input.execution === 'object' ? input.execution : {};\nconst workflow = input.workflow && typeof input.workflow === 'object' ? input.workflow : {};\nconst error = execution.error && typeof execution.error === 'object'\n  ? execution.error\n  : input.error && typeof input.error === 'object'\n    ? input.error\n    : {};\n\nconst message = error.message || input.message || 'Unknown workflow error';\nconst nodeName = execution.lastNodeExecuted || error.node?.name || null;\nconst workflowName = workflow.name || 'Unknown workflow';\nconst executionUrl = execution.url || null;\n\nconst summary = nodeName\n  ? workflowName + ' failed at ' + nodeName + ': ' + message\n  : workflowName + ' failed: ' + message;\n\nreturn [{\n  json: {\n    severity: 'error',\n    summary,\n    workflow: {\n      id: workflow.id || null,\n      name: workflowName,\n    },\n    execution: {\n      id: execution.id || null,\n      url: executionUrl,\n      mode: execution.mode || null,\n      lastNodeExecuted: nodeName,\n    },\n    error: {\n      name: error.name || null,\n      message,\n      description: error.description || null,\n    },\n    alert: {\n      title: 'n8n workflow failure: ' + workflowName,\n      text: summary + (executionUrl ? '\\n' + executionUrl : ''),\n    },\n    meta: { formattedAt: new Date().toISOString() },\n  },\n}];"
+      },
+      "id": "ac171c77-8d56-40c3-a1f3-199935a6e394",
+      "name": "Format Error Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Format Error Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

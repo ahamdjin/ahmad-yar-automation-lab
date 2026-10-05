@@ -1,5 +1,5 @@
 import { readdir, readFile, access } from 'node:fs/promises';
-import { join, dirname, relative } from 'node:path';
+import { join, dirname, relative, extname } from 'node:path';
 import process from 'node:process';
 
 const root = process.cwd();
@@ -7,10 +7,14 @@ const n8nRoot = join(root, 'n8n');
 const errors = [];
 const webhookPaths = new Map();
 
+const ignoredDirectories = new Set(['.git', 'node_modules']);
+const textExtensions = new Set(['.json', '.js', '.mjs', '.md', '.yml', '.yaml', '.txt']);
+
 async function walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
   const files = [];
   for (const entry of entries) {
+    if (entry.isDirectory() && ignoredDirectories.has(entry.name)) continue;
     const path = join(dir, entry.name);
     if (entry.isDirectory()) files.push(...await walk(path));
     else files.push(path);
@@ -28,7 +32,8 @@ function secretCheck(file, raw) {
     /\bghp_[A-Za-z0-9]{20,}\b/,
     /\bgithub_pat_[A-Za-z0-9_]{20,}\b/,
     /\bxox[baprs]-[A-Za-z0-9-]{20,}\b/,
-    /\bsk-[A-Za-z0-9_-]{20,}\b/
+    /\bsk-[A-Za-z0-9_-]{20,}\b/,
+    /\bAKIA[0-9A-Z]{16}\b/
   ];
   for (const pattern of patterns) {
     if (pattern.test(raw)) fail(file, `possible secret matching ${pattern}`);
@@ -50,9 +55,17 @@ function validateConnections(file, workflow, nodeNames) {
   }
 }
 
+async function requireSibling(file, name) {
+  const sibling = join(dirname(file), name);
+  try {
+    await access(sibling);
+  } catch {
+    fail(file, `missing sibling ${name}`);
+  }
+}
+
 async function validateWorkflow(file) {
   const raw = await readFile(file, 'utf8');
-  secretCheck(file, raw);
 
   let workflow;
   try {
@@ -66,8 +79,13 @@ async function validateWorkflow(file) {
   if (!Array.isArray(workflow.nodes) || workflow.nodes.length === 0) fail(file, 'nodes must be a non-empty array');
   if (!workflow.connections || typeof workflow.connections !== 'object') fail(file, 'missing connections object');
   if (workflow.active !== false) fail(file, 'public workflow exports must set active to false');
+  if (!workflow.settings || workflow.settings.executionOrder !== 'v1') fail(file, 'settings.executionOrder must be v1');
 
   const names = new Set();
+  const ids = new Set();
+  const webhookNodes = [];
+  const respondNodes = [];
+
   for (const node of workflow.nodes || []) {
     if (!node.name) {
       fail(file, 'node missing name');
@@ -76,7 +94,12 @@ async function validateWorkflow(file) {
     if (names.has(node.name)) fail(file, `duplicate node name "${node.name}"`);
     names.add(node.name);
 
+    if (!node.id) fail(file, `node "${node.name}" is missing an id`);
+    else if (ids.has(node.id)) fail(file, `duplicate node id "${node.id}"`);
+    else ids.add(node.id);
+
     if (node.type === 'n8n-nodes-base.webhook') {
+      webhookNodes.push(node);
       const path = node.parameters?.path;
       if (!path) fail(file, `webhook node "${node.name}" is missing a path`);
       else if (webhookPaths.has(path)) {
@@ -85,28 +108,45 @@ async function validateWorkflow(file) {
         webhookPaths.set(path, relative(root, file));
       }
     }
+
+    if (node.type === 'n8n-nodes-base.respondToWebhook') {
+      respondNodes.push(node);
+      if (node.parameters?.options?.responseCode === undefined) {
+        fail(file, `Respond to Webhook node "${node.name}" must set an explicit response code`);
+      }
+    }
+  }
+
+  for (const webhook of webhookNodes) {
+    if (respondNodes.length > 0 && webhook.parameters?.responseMode !== 'responseNode') {
+      fail(file, `webhook node "${webhook.name}" must use responseMode=responseNode when Respond to Webhook is present`);
+    }
   }
 
   validateConnections(file, workflow, names);
+  await requireSibling(file, 'README.md');
 
-  const readme = join(dirname(file), 'README.md');
-  try {
-    await access(readme);
-  } catch {
-    fail(file, 'missing sibling README.md');
+  if (webhookNodes.length > 0) {
+    await requireSibling(file, 'sample-request.json');
+    await requireSibling(file, 'sample-response.json');
   }
 }
 
-let files = [];
-try {
-  files = (await walk(n8nRoot)).filter((file) => file.endsWith('workflow.json'));
-} catch {
-  errors.push('n8n/: workflow directory is missing');
+const allFiles = await walk(root);
+for (const file of allFiles) {
+  if (textExtensions.has(extname(file))) {
+    const raw = await readFile(file, 'utf8');
+    secretCheck(file, raw);
+  }
 }
 
-if (files.length === 0) errors.push('No n8n/**/workflow.json files found');
+const workflowFiles = allFiles.filter((file) =>
+  file.startsWith(n8nRoot) && file.endsWith('workflow.json')
+);
 
-for (const file of files) await validateWorkflow(file);
+if (workflowFiles.length === 0) errors.push('No n8n/**/workflow.json files found');
+
+for (const file of workflowFiles) await validateWorkflow(file);
 
 if (errors.length) {
   console.error('Workflow validation failed:\n');
@@ -114,4 +154,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Validated ${files.length} workflow${files.length === 1 ? '' : 's'} successfully.`);
+console.log(`Validated ${workflowFiles.length} workflow${workflowFiles.length === 1 ? '' : 's'} successfully.`);

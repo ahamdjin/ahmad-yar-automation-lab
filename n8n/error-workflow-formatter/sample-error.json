@@ -1,0 +1,16 @@
+{
+  "workflow": {
+    "id": "12",
+    "name": "Lead Intake"
+  },
+  "execution": {
+    "id": "88",
+    "url": "https://n8n.example/execution/88",
+    "mode": "webhook",
+    "lastNodeExecuted": "Create CRM Contact",
+    "error": {
+      "name": "NodeApiError",
+      "message": "CRM returned 429"
+    }
+  }
+}

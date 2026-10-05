@@ -34,12 +34,14 @@
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ $json }}",
-        "options": {}
+        "options": {
+          "responseCode": 200
+        }
       },
       "id": "9fd2a45f-260d-4690-8f46-9daa76674fd0",
       "name": "Respond",
       "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.4,
+      "typeVersion": 1.5,
       "position": [
         100,
         0
