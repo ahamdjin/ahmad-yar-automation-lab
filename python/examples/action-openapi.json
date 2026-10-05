@@ -1,0 +1,48 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Lead Lookup API",
+    "version": "1.0.0",
+    "description": "Small action surface for looking up a lead."
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com"
+    }
+  ],
+  "paths": {
+    "/leads/{lead_id}": {
+      "get": {
+        "operationId": "getLead",
+        "summary": "Get a lead by ID",
+        "description": "Use when the user asks for details about a known lead ID.",
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "description": "The lead identifier returned by the CRM.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lead found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lead not found"
+          }
+        }
+      }
+    }
+  }
+}

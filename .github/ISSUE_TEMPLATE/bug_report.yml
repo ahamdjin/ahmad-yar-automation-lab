@@ -1,13 +1,25 @@
-name: Workflow bug
-description: Report a reproducible issue with a workflow or repository utility.
+name: Workflow or utility bug
+description: Report a reproducible issue with a workflow, Python utility, or repository tool.
 title: "[Bug]: "
 labels: ["bug"]
 body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - n8n workflow
+        - Python GPT / agent utility
+        - validation tooling
+        - documentation
+        - reusable JavaScript snippet
+    validations:
+      required: true
   - type: input
     id: path
     attributes:
       label: Workflow or file path
-      placeholder: n8n/lead-intake-normalizer/workflow.json
+      placeholder: python/gpt_tools/tool_output_compactor.py
     validations:
       required: true
   - type: textarea

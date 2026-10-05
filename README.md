@@ -2,7 +2,7 @@
 
 [![Validate automation library](https://github.com/ahamdjin/ahmad-yar-automation-lab/actions/workflows/validate.yml/badge.svg)](https://github.com/ahamdjin/ahmad-yar-automation-lab/actions/workflows/validate.yml)
 
-Reusable n8n workflows, automation patterns, and implementation notes for real business systems.
+Reusable n8n workflows, Python utilities, automation patterns, and implementation notes for real business systems.
 
 The goal is simple: publish small automation building blocks that are safe to inspect, easy to adapt, and useful before you connect them to a CRM, help desk, database, messaging platform, or AI layer.
 
@@ -16,11 +16,23 @@ The goal is simple: publish small automation building blocks that are safe to in
 | [UTM Attribution Normalizer](n8n/utm-attribution-normalizer/) | standardize campaign attribution and strip tracking parameters from landing URLs | None |
 | [Error Workflow Formatter](n8n/error-workflow-formatter/) | turn n8n failure events into a clean alert payload for Slack, email, or incident tools | None |
 
+## Python toolkit for GPT / agent systems
+
+| Utility | Use it when you need to... |
+| --- | --- |
+| [Retrieval Chunker](python/README.md#1-retrieval-chunker) | turn Markdown, text, JSON, or CSV into deterministic retrieval JSONL |
+| [PII + Secret Redactor](python/README.md#2-pii--secret-redactor) | remove common sensitive values before model context or logs |
+| [Tool-output Compactor](python/README.md#3-tool-output-compactor) | shrink large API/tool responses and redact secret-bearing fields |
+| [OpenAPI Action Auditor](python/README.md#4-openapi-action-auditor) | catch common GPT/action schema problems before deployment |
+
+The Python package uses only the standard library for its core tools. See [python/README.md](python/README.md) for installation, examples, and limitations.
+
 ## What lives here
 
 | Area | Purpose |
 | --- | --- |
 | `n8n/` | Importable n8n workflows with setup notes and fictional sample payloads |
+| `python/` | Reusable Python utilities for GPT, agent, retrieval, and tool pipelines |
 | `snippets/` | Reusable JavaScript helpers for Code nodes and automation scripts |
 | `docs/` | Architecture notes, production checklists, and implementation guides |
 | `scripts/` | Repository validation tooling |
@@ -29,7 +41,7 @@ The goal is simple: publish small automation building blocks that are safe to in
 ## How to use a workflow
 
 1. Open the workflow folder and read its README first.
-2. Import `workflow.json` into n8n.
+2. Import its `workflow.json` into n8n.
 3. Use the test webhook URL while developing.
 4. Send the included fictional sample payload.
 5. Review every rule and assumption before connecting production systems.
@@ -40,27 +52,26 @@ For webhook-specific production checks, use [docs/webhook-production-checklist.m
 
 ## Quality standard
 
-Every public workflow should:
+Every public workflow or utility should:
 
 - solve a specific operational problem;
-- be inactive by default;
 - contain no secrets or real customer data;
-- use descriptive node names;
 - document inputs, outputs, assumptions, and failure modes;
-- include fictional examples;
+- include fictional examples where useful;
 - make business rules visible instead of hiding them behind vague "AI" labels;
 - state clearly what still needs production hardening.
 
-The full standard is in [docs/workflow-quality-standard.md](docs/workflow-quality-standard.md).
+The full n8n standard is in [docs/workflow-quality-standard.md](docs/workflow-quality-standard.md).
 
 ## Validation
 
-CI validates workflow JSON, node names and IDs, connection targets, webhook path collisions, explicit webhook response codes, documentation, sample payloads, and common secret patterns.
+CI validates n8n workflow structure and runs the Python unit-test suite. It checks workflow JSON, node names and IDs, connection targets, webhook path collisions, explicit webhook response codes, documentation, sample payloads, common secret patterns, and Python behavior.
 
-Run the same checks locally:
+Run the checks locally:
 
 ```bash
 npm run validate
+PYTHONPATH=python python -m unittest discover -s tests/python -p 'test_*.py'
 ```
 
 ## n8n references
