@@ -1,0 +1,110 @@
+name: Publish Python package to PyPI
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and verify distribution
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@v7
+
+      - name: Use Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Verify release tag matches package version
+        env:
+          RELEASE_TAG: \${{ github.event.release.tag_name }}
+        run: |
+          python - <<'PY'
+          import os
+          import pathlib
+          import re
+          import tomllib
+
+          project = tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))["project"]
+          version = project["version"]
+          tag = os.environ["RELEASE_TAG"]
+
+          init_text = pathlib.Path("python/gpt_tools/__init__.py").read_text(encoding="utf-8")
+          match = re.search(r'__version__\s*=\s*"([^"]+)"', init_text)
+          if not match:
+              raise SystemExit("python/gpt_tools/__init__.py is missing __version__")
+
+          package_version = match.group(1)
+          expected_tag = f"v{version}"
+
+          if package_version != version:
+              raise SystemExit(
+                  f"Version mismatch: pyproject.toml={version}, gpt_tools.__version__={package_version}"
+              )
+
+          if tag != expected_tag:
+              raise SystemExit(f"Release tag must be {expected_tag}, got {tag}")
+
+          print(f"Release metadata verified: {project['name']} {version} ({tag})")
+          PY
+
+      - name: Compile and test package
+        env:
+          PYTHONPATH: python
+        run: |
+          python -m compileall -q python
+          python -m unittest discover -s tests/python -p 'test_*.py'
+
+      - name: Install build tooling
+        run: python -m pip install build twine
+
+      - name: Build wheel and source distribution
+        run: python -m build
+
+      - name: Verify package metadata
+        run: python -m twine check dist/*
+
+      - name: Verify built wheel in a clean environment
+        run: |
+          python -m venv /tmp/release-wheel
+          /tmp/release-wheel/bin/python -m pip install dist/*.whl
+          /tmp/release-wheel/bin/python -c "import gpt_tools; print(gpt_tools.__version__)"
+          /tmp/release-wheel/bin/gpt-action-audit python/examples/action-openapi.json
+          /tmp/release-wheel/bin/gpt-url-check https://example.com/
+
+      - name: Store release distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-to-pypi:
+    name: Publish distribution to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: pypi
+      url: https://pypi.org/project/ahmad-yar-gpt-tools/
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Download release distributions
+        uses: actions/download-artifact@v6
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish to PyPI with Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@release/v1

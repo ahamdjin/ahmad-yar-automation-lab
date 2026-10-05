@@ -14,18 +14,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Use Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
+          package-manager-cache: false
 
       - name: Validate n8n workflow exports
         run: npm run validate
 
       - name: Use Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -37,7 +38,7 @@ jobs:
           PYTHONPATH: python
         run: python -m unittest discover -s tests/python -p 'test_*.py'
 
-      - name: Install Python toolkit
+      - name: Install Python toolkit from source
         run: python -m pip install -e .
 
       - name: Smoke-test installed Python CLIs
@@ -51,3 +52,17 @@ jobs:
           gpt-retry 429 --method GET --attempt 1
           gpt-html-text python/examples/page.html --base-url https://example.com --json > /tmp/page.json
           gpt-dedupe-jsonl python/examples/retrieval-duplicates.jsonl -o /tmp/deduped.jsonl --report
+
+      - name: Build and verify Python distributions
+        run: |
+          python -m pip install build twine
+          rm -rf build dist
+          python -m build
+          python -m twine check dist/*
+
+      - name: Verify wheel in a clean virtual environment
+        run: |
+          python -m venv /tmp/ahmad-yar-gpt-tools-wheel
+          /tmp/ahmad-yar-gpt-tools-wheel/bin/python -m pip install dist/*.whl
+          /tmp/ahmad-yar-gpt-tools-wheel/bin/python -c "import gpt_tools; print(gpt_tools.__version__)"
+          /tmp/ahmad-yar-gpt-tools-wheel/bin/gpt-url-check https://example.com/
