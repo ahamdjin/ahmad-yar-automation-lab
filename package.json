@@ -5,7 +5,7 @@
   "description": "Validation tooling for a public library of n8n workflows and automation patterns.",
   "type": "module",
   "scripts": {
-    "validate": "node scripts/validate-workflows.mjs"
+    "validate": "node scripts/validate-workflows.mjs && node --test tests/node/*.test.mjs"
   },
   "engines": {
     "node": ">=22"

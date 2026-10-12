@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "status": "accepted",
+  "event_id": "evt_demo_20261013_001",
+  "source": "crm",
+  "dedupe_key": "crm:evt_demo_20261013_001",
+  "disposition": "first_seen",
+  "message": "Key not present in the configured n8n deduplication history."
+}
