@@ -15,6 +15,7 @@ The goal is simple: publish small automation building blocks that are safe to in
 | [Webhook Payload Validator](n8n/webhook-payload-validator/) | reject malformed contact payloads before they reach downstream systems | None |
 | [UTM Attribution Normalizer](n8n/utm-attribution-normalizer/) | standardize campaign attribution and strip tracking parameters from landing URLs | None |
 | [Error Workflow Formatter](n8n/error-workflow-formatter/) | turn n8n failure events into a clean alert payload for Slack, email, or incident tools | None |
+| [Webhook Replay Shield](n8n/webhook-replay-shield/) | validate stable event IDs and suppress repeated webhook deliveries across executions | None to import; configure Webhook auth before activation |
 
 ## Python toolkit for GPT / agent systems
 
