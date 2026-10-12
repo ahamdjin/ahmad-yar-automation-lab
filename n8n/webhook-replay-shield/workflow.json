@@ -1,0 +1,274 @@
+{
+  "name": "Webhook Replay Shield — Validate, Accept, Suppress Replays",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook-replay-shield",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "9e1ca241-81b4-4dc9-bd43-023c55e5f419",
+      "name": "Receive Event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -700,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst body = input.body && typeof input.body === \"object\" && !Array.isArray(input.body) ? input.body : {};\nconst get = (a,b) => Object.prototype.hasOwnProperty.call(body,a) ? body[a] : body[b];\nconst id = typeof get(\"event_id\",\"eventId\") === \"string\" ? get(\"event_id\",\"eventId\").trim() : \"\";\nconst rawSource = get(\"source\",\"origin\");\nconst source = typeof rawSource === \"string\" ? rawSource.trim().toLowerCase() : \"\";\nconst errors = [];\nif (!/^[A-Za-z0-9][A-Za-z0-9._:-]{5,127}$/.test(id)) errors.push(\"event_id must be a stable string of 6-128 letters, numbers, dots, underscores, colons or hyphens\");\nif (!/^[a-z][a-z0-9._-]{1,39}$/.test(source)) errors.push(\"source must be a stable system name of 2-40 lowercase letters, numbers, dots, underscores or hyphens\");\nif (Object.keys(body).length > 30) errors.push(\"too many top-level fields\");\nconst valid = errors.length === 0;\nreturn [{json:{\n  valid,\n  eventId: valid ? id : null,\n  source: valid ? source : null,\n  eventKey: valid ? source + \":\" + id : null,\n  error: valid ? null : {code:\"invalid_event_envelope\",details:errors}\n}}];"
+      },
+      "id": "5f8edcd5-5f96-4e8c-aac9-2113262e0091",
+      "name": "Validate Event Envelope",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -460,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "735e892a-3b3c-4238-8f93-0f321e9988b0",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ef0018ab-4914-444b-baa3-3d23bddfb519",
+      "name": "Valid Event?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -200,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.eventKey }}",
+        "options": {
+          "scope": "node"
+        }
+      },
+      "id": "c85d1b03-cc9b-4789-8709-e80dbbe2b101",
+      "name": "Remember Seen Event Keys",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        30,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const {eventId,source,eventKey}=$input.first().json;\nreturn [{json:{ok:true,status:\"accepted\",event_id:eventId,source,dedupe_key:eventKey,disposition:\"first_seen\",message:\"Key not present in the configured n8n deduplication history.\"}}];"
+      },
+      "id": "3cab9322-0fce-4249-b42b-6426c4d92a85",
+      "name": "First Delivery Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const {eventId,source,eventKey}=$input.first().json;\nreturn [{json:{ok:true,status:\"duplicate_ignored\",event_id:eventId,source,dedupe_key:eventKey,disposition:\"seen_before\",message:\"Matching key already exists in the configured n8n deduplication history.\"}}];"
+      },
+      "id": "0a892d28-56e6-4f04-9fa6-35262a5ad3e1",
+      "name": "Duplicate Delivery Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        30
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const {error}=$input.first().json;\nreturn [{json:{ok:false,status:\"rejected\",error:error||{code:\"invalid_event_envelope\",details:[\"Invalid body\"]}}}];"
+      },
+      "id": "46eef853-a8dc-4b8e-ace4-ad1c700693c1",
+      "name": "Reject Invalid Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        30,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 202
+        }
+      },
+      "id": "f983d3f4-f2df-4389-aabf-df52e4413445",
+      "name": "Return 202 First Seen",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        560,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "0ee91ad0-a599-49cd-bca5-e4ab64150ac9",
+      "name": "Return 200 Duplicate",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        560,
+        30
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 422
+        }
+      },
+      "id": "e9f10473-e225-444f-a407-7b84f628abf0",
+      "name": "Return 422 Invalid",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        300,
+        250
+      ]
+    }
+  ],
+  "connections": {
+    "Receive Event": {
+      "main": [
+        [
+          {
+            "node": "Validate Event Envelope",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Event Envelope": {
+      "main": [
+        [
+          {
+            "node": "Valid Event?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Event?": {
+      "main": [
+        [
+          {
+            "node": "Remember Seen Event Keys",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject Invalid Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remember Seen Event Keys": {
+      "main": [
+        [
+          {
+            "node": "First Delivery Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Duplicate Delivery Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "First Delivery Response": {
+      "main": [
+        [
+          {
+            "node": "Return 202 First Seen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Duplicate Delivery Response": {
+      "main": [
+        [
+          {
+            "node": "Return 200 Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reject Invalid Event": {
+      "main": [
+        [
+          {
+            "node": "Return 422 Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "UTC"
+  },
+  "tags": []
+}

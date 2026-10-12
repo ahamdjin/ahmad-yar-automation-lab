@@ -1,0 +1,9 @@
+{
+  "event_id": "evt_demo_20261013_001",
+  "source": "crm",
+  "event_type": "lead.created",
+  "lead": {
+    "name": "Fictional Person",
+    "email": "nobody@example.invalid"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "status": "rejected",
+  "error": {
+    "code": "invalid_event_envelope",
+    "details": [
+      "event_id must be a stable string of 6-128 letters, numbers, dots, underscores, colons or hyphens"
+    ]
+  }
+}
