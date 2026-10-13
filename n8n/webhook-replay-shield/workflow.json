@@ -1,5 +1,5 @@
 {
-  "name": "Webhook Replay Shield — Validate, Accept, Suppress Replays",
+  "name": "Webhook Replay Shield - Safe Single-Output Replay Filter",
   "nodes": [
     {
       "parameters": {
@@ -69,8 +69,10 @@
         "operation": "removeItemsSeenInPreviousExecutions",
         "dedupeValue": "={{ $json.eventKey }}",
         "options": {
-          "scope": "node"
-        }
+          "scope": "node",
+          "historySize": 10000
+        },
+        "logic": "removeItemsWithAlreadySeenKeyValues"
       },
       "id": "c85d1b03-cc9b-4789-8709-e80dbbe2b101",
       "name": "Remember Seen Event Keys",
@@ -92,19 +94,6 @@
       "position": [
         300,
         -220
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "const {eventId,source,eventKey}=$input.first().json;\nreturn [{json:{ok:true,status:\"duplicate_ignored\",event_id:eventId,source,dedupe_key:eventKey,disposition:\"seen_before\",message:\"Matching key already exists in the configured n8n deduplication history.\"}}];"
-      },
-      "id": "0a892d28-56e6-4f04-9fa6-35262a5ad3e1",
-      "name": "Duplicate Delivery Response",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        300,
-        30
       ]
     },
     {
@@ -135,23 +124,6 @@
       "position": [
         560,
         -220
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ $json }}",
-        "options": {
-          "responseCode": 200
-        }
-      },
-      "id": "0ee91ad0-a599-49cd-bca5-e4ab64150ac9",
-      "name": "Return 200 Duplicate",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.5,
-      "position": [
-        560,
-        30
       ]
     },
     {
@@ -221,13 +193,6 @@
             "type": "main",
             "index": 0
           }
-        ],
-        [
-          {
-            "node": "Duplicate Delivery Response",
-            "type": "main",
-            "index": 0
-          }
         ]
       ]
     },
@@ -236,17 +201,6 @@
         [
           {
             "node": "Return 202 First Seen",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Duplicate Delivery Response": {
-      "main": [
-        [
-          {
-            "node": "Return 200 Duplicate",
             "type": "main",
             "index": 0
           }

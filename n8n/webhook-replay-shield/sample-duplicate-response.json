@@ -1,9 +1,0 @@
-{
-  "ok": true,
-  "status": "duplicate_ignored",
-  "event_id": "evt_demo_20261013_001",
-  "source": "crm",
-  "dedupe_key": "crm:evt_demo_20261013_001",
-  "disposition": "seen_before",
-  "message": "Matching key already exists in the configured n8n deduplication history."
-}
