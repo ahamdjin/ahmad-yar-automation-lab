@@ -41,9 +41,16 @@ function secretCheck(file, raw) {
 }
 
 function validateConnections(file, workflow, nodeNames) {
+  const byName = new Map((workflow.nodes || []).map((node) => [node.name, node]));
   for (const [source, groups] of Object.entries(workflow.connections || {})) {
     if (!nodeNames.has(source)) fail(file, `connection source "${source}" is not a node`);
     for (const branches of Object.values(groups || {})) {
+      const src = byName.get(source);
+      // In n8n v2 Remove Duplicates, Kept/Discarded are result tabs; only one
+      // canvas output is declared. A second branch silently appears detached.
+      if (src?.type === "n8n-nodes-base.removeDuplicates" && src.typeVersion === 2 && branches.length > 1) {
+        fail(file, `Remove Duplicates node "${source}" has only one canvas output; branch 1 is not connectable`);
+      }
       for (const branch of branches || []) {
         for (const connection of branch || []) {
           if (!nodeNames.has(connection.node)) {

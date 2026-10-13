@@ -12,12 +12,12 @@ const evalCode = (name, json) => {
   return JSON.parse(JSON.stringify(runInNewContext(text, {$input:{first:()=>({json})}}, {timeout:1500})[0].json));
 };
 
-test("inactive import contains valid 202 / 200 / 422 branches",() => {
+test("inactive import contains valid 202 and 422 branches",() => {
   assert.equal(workflow.active,false);
   assert.equal(workflow.settings.executionOrder,"v1");
   assert.equal(nodes.get("Receive Event").parameters.responseMode,"responseNode");
   assert.equal(nodes.get("Receive Event").parameters.path,"webhook-replay-shield");
-  for(const [name,status] of [["Return 202 First Seen",202],["Return 200 Duplicate",200],["Return 422 Invalid",422]]) {
+  for(const [name,status] of [["Return 202 First Seen",202],["Return 422 Invalid",422]]) {
     assert.equal(nodes.get(name).parameters.options.responseCode,status);
   }
   const branch = workflow.connections["Valid Event?"].main;
@@ -31,9 +31,14 @@ test("dedupe node uses n8n persisted prior-execution history",() => {
   assert.equal(node.typeVersion,2);
   assert.equal(node.parameters.operation,"removeItemsSeenInPreviousExecutions");
   assert.equal(node.parameters.dedupeValue,"={{ $json.eventKey }}");
+  assert.equal(node.parameters.logic,"removeItemsWithAlreadySeenKeyValues");
+  assert.equal(node.parameters.options.scope,"node");
+  assert.equal(node.parameters.options.historySize,10000);
   const branches=workflow.connections[node.name].main;
   assert.equal(branches[0][0].node,"First Delivery Response");
-  assert.equal(branches[1][0].node,"Duplicate Delivery Response");
+  assert.equal(branches.length,1,"n8n exposes one canvas output on Remove Duplicates v2");
+  assert.ok(!nodes.has("Duplicate Delivery Response"));
+  assert.ok(!nodes.has("Return 200 Duplicate"));
 });
 
 test("first and repeat deliveries return safe fictional example response bodies",() => {
@@ -44,7 +49,6 @@ test("first and repeat deliveries return safe fictional example response bodies"
   assert.equal(event.lead,undefined);
   assert.equal(JSON.stringify(event).includes("nobody@example.invalid"),false);
   assert.deepEqual(evalCode("First Delivery Response",event),read("sample-response.json"));
-  assert.deepEqual(evalCode("Duplicate Delivery Response",event),read("sample-duplicate-response.json"));
 });
 
 test("valid identifiers are source-scoped with case-sensitive event IDs",() => {
@@ -79,7 +83,25 @@ test("extra private input keys are not echoed",() => {
 
 test("sample template has no active side effects or credentials",() => {
   assert.equal(workflow.nodes.filter(node=>node.type==="n8n-nodes-base.httpRequest").length,0);
-  assert.equal(workflow.nodes.filter(node=>node.type==="n8n-nodes-base.respondToWebhook").length,3);
+  assert.equal(workflow.nodes.filter(node=>node.type==="n8n-nodes-base.respondToWebhook").length,2);
   assert.ok(workflow.nodes.every(node=>node.credentials==null));
   assert.equal(new Set(workflow.nodes.map(node=>node.id)).size,workflow.nodes.length);
+});
+
+test("all Code nodes are on a reachable path and only terminal response nodes are leaves", () => {
+  const reachable = new Set(["Receive Event"]);
+  const queue = ["Receive Event"];
+  while (queue.length) {
+    const name = queue.shift();
+    for (const branch of workflow.connections[name]?.main ?? []) {
+      for (const edge of branch) {
+        if (!reachable.has(edge.node)) { reachable.add(edge.node); queue.push(edge.node); }
+      }
+    }
+  }
+  assert.deepEqual(new Set(workflow.nodes.map(n=>n.name)), reachable);
+  for (const node of workflow.nodes) {
+    if (node.type === "n8n-nodes-base.respondToWebhook") continue;
+    assert.ok((workflow.connections[node.name]?.main??[]).some(branch=>branch.length),"Unconnected node: "+node.name);
+  }
 });

@@ -24,7 +24,7 @@ Webhooks are commonly delivered at least once. An HTTP timeout doesn't tell the 
 
 ## Notes on the public Replay Shield example
 
-The example uses n8n's history store on the **first-seen** path, before any real integration. It returns HTTP 202 for keys newly admitted, 200 for duplicate keys, and 422 for invalid envelopes. These codes are deliberately explicit; external webhook senders may interpret non-2xx statuses differently.
+The example uses n8n's persisted history store before any real integration. **First-seen** IDs flow to a custom HTTP 202 response; **invalid** envelopes flow to HTTP 422. **Duplicates** are dropped by the one-output Remove Duplicates node, so n8n returns its documented **standard HTTP 200 fallback** without a custom JSON body. Do not attach a duplicate-response Code node to an imaginary second output. This workflow is for replay filtering, not a guaranteed transaction receipt.
 
 Treat it as a **filter or learning example**, not an authoritative success receipt for any business action. Its default history size is finite; a legitimate event may be rediscovered after eviction or history reset. Do not add charging/billing actions directly without a proper durable ledger.
 

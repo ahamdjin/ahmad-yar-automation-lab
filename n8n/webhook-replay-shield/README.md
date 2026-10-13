@@ -2,7 +2,7 @@
 
 **What it solves:** webhook providers often redeliver events after a timeout or temporary failure. Without a stable ID, a single lead, payment notification or order can trigger repeated downstream work.
 
-This n8n workflow separates **first-seen**, **repeat**, and **invalid** webhook requests. It uses n8n's persisted **Remove Duplicates: Remove Items Processed in Previous Executions** history, so it requires no external database for this introductory pattern. It makes **no CRM changes, emails, charges or external API calls**.
+This n8n workflow accepts **first-seen** webhook IDs, silently filters **repeat** deliveries, and explicitly rejects **invalid** requests. It uses n8n's persisted **Remove Duplicates: Remove Items Processed in Previous Executions** history, so it requires no external database for this introductory pattern. It makes **no CRM changes, emails, charges or external API calls**.
 
 **Important:** this is a best-effort replay filter. It is **not** transactional exactly-once processing. See [idempotency design notes](../../docs/webhook-replay-and-idempotency.md) before connecting irreversible side effects.
 
@@ -30,16 +30,16 @@ The workflow accepts extra fields but **drops them** from its validated output a
 | Condition | Status | Body status |
 | --- | ---: | --- |
 | First-seen ID | `202 Accepted` | `accepted`, `first_seen` |
-| Previously seen ID, same source | `200 OK` | `duplicate_ignored`, `seen_before` |
+| Previously seen ID, same source | `200 OK` (n8n's standard fallback) | No custom JSON body; the Remove Duplicates node emits no item |
 | Malformed ID/source | `422 Unprocessable Entity` | `rejected`, `invalid_event_envelope` |
 
-Examples: `sample-request.json`, `sample-response.json`, `sample-duplicate-response.json`, `sample-invalid-request.json`, and `sample-invalid-response.json`.
+Examples: `sample-request.json`, `sample-response.json`, `sample-invalid-request.json`, and `sample-invalid-response.json`. There is **no JSON `duplicate_ignored` response** in this version. A repeated event is filtered out, and n8n returns its documented standard HTTP 200 message because no Respond to Webhook node is reached.
 
 ## Import and test
 
 1. Import `workflow.json` into a compatible n8n instance (n8n **1.64+**; uses Remove Duplicates node version 2). It is **inactive** by default.
 2. For a safe test, open **Receive Event**, click **Listen for test event**, and send the fictional `sample-request.json` to the generated test webhook URL. Keep the sender and ID unchanged between retries.
-3. Re-run the same request in a **separate execution**. It should go to the **Discarded** output of **Remember Seen Event Keys** and return HTTP 200. n8n's test history behavior can vary by version; confirm across published executions too.
+3. Send the same request in a **separate execution**. The Remove Duplicates node should show the ID in its **Discarded** result, with **no item flowing downstream**. n8n returns its **standard HTTP 200** response (not a custom JSON reply). Test-mode history behavior can vary; confirm using a protected, published workflow as well.
 4. Send `sample-invalid-request.json`. It should return HTTP 422 and bypass the deduplication node.
 5. Before publishing: configure authentication and access control on **Receive Event**, review the history size and execution-data retention settings, and test again using a protected production endpoint.
 
@@ -49,12 +49,14 @@ curl -sS -i -X POST "$N8N_TEST_WEBHOOK_URL" \
   --data-binary @sample-request.json
 ```
 
-**Where to add actions:** place CRM upserts, email/Slack notifications or other operations on the **Kept / first** branch between **Remember Seen Event Keys** and **First Delivery Response**. The **Discarded / second** branch deliberately suppresses repeated event IDs. Never attach side-effect actions to the discarded branch.
+**Where to add actions:** connect CRM upserts, email/Slack notifications or other actions **after Remember Seen Event Keys**, in the one **main/Kept** output path, before **First Delivery Response**. Duplicate events are **discarded inside the node**, not routed through a second canvas output. Do **not** draw a connection from a nonexistent second port.
+
+**Using this in an existing workflow:** you need **one webhook**, not two. Copy the normalization/validation logic (or map your existing stable ID to `eventKey`) followed by **Remember Seen Event Keys** into your original workflow, and connect its single outgoing path to your existing business nodes. This standalone demo intentionally removes additional customer fields after validation; when adapting to CRM work, keep the necessary source fields in your flow, and verify permission and PII retention settings.
 
 ## Important security and correctness limits
 
 - **Authentication required before activation.** No credential is shipped. An unauthenticated production webhook is publicly callable and may let an attacker pre-seed event IDs; configure n8n Webhook authentication (for example Header Auth) and, where appropriate, provider-specific signature verification.
-- **History is bounded.** The Remove Duplicates node defaults to retaining a finite number of keys (n8n documents 10,000 items). Old IDs can reappear after eviction or resetting the node history.
+- **Where the ID lives:** n8n saves the deduplication key in its own persisted processed-item history, scoped to this node. It is **not held for only a few seconds** or stored in the browser. This example explicitly configures a 10,000-entry history size (a count limit, **not a TTL**). Retention, eviction and full-history behavior vary by n8n version; old IDs may be accepted again after reset/eviction, and some older versions can error on a full history. Check node execution data and the history-size option before production.
 - **A suppressed retry can hide a failed action.** The key is remembered *before* downstream effects are known to have succeeded. If a CRM write fails, the event may be marked seen and its retry discarded. Use a proper durable state machine (`pending`, `succeeded`, `failed`) for production and allow safe reprocessing after failure.
 - **Concurrent deliveries can race.** This workflow does not provide a database-level uniqueness constraint or atomic locking. For money movements, billing, provisioning, and irreversible actions, enforce idempotency with unique event IDs in a durable system and preferably in the target service.
 - **n8n may retain request bodies in execution logs.** Filtering the response is not sufficient to protect personal data; configure retention, permissions and sensitive-data handling at the n8n instance level.
@@ -66,6 +68,7 @@ curl -sS -i -X POST "$N8N_TEST_WEBHOOK_URL" \
 - [n8n Remove Duplicates](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.removeduplicates/)
 - [n8n Remove Duplicates examples](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.removeduplicates/templates-and-examples/)
 - [n8n Webhook node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/)
+- [n8n Respond to Webhook: the standard HTTP 200 fallback when no response node runs](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.respondtowebhook/)
 - [Webhook production checklist](../../docs/webhook-production-checklist.md)
 
 Maintained by [Ahmad Yar](https://www.ahmadyar.co/) · [Automation Lab](https://github.com/ahamdjin/ahmad-yar-automation-lab)
